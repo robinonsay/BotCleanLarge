@@ -39,7 +39,6 @@ def heuristic(state: State) -> int:
     This is where the fun begins...
     Uses Nearest neighbor method to calculate heuristic
     :param state: The state to calculate from
-    :param dirt_set: Locations of the dirt
     :return: A heuristic value
     """
     # Copies dirt locations to a list
