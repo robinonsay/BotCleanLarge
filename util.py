@@ -94,6 +94,17 @@ class GridWorld:
     def get_bot_pos(self):
         return self._bot.pos
 
+    def dirt_empty(self):
+        return len(self._dirt) == 0
+
+    @property
+    def dirt(self):
+        return frozenset(self._dirt)
+
+    @property
+    def grid(self):
+        return self._grid.copy()
+
     def move_bot(self, action: str) -> Position:
         old_pos = self._bot.pos
         if action == "UP":
