@@ -2,16 +2,17 @@ import tkinter
 import time
 from util import Position, Dim, GridWorld
 from typing import NamedTuple
+from pathfinder import PathFinder
 
-GRID_SIZE = 10
+GRID_SIZE = 20
 World = NamedTuple("World", [("grid_dim", Dim), ("window", tkinter.Tk), ("canvas", tkinter.Canvas)])
 TkBot = NamedTuple("TkBot", [("pos", Position), ("bot_id", int)])
-Context = NamedTuple("Context", [("world", World), ("grid_world", GridWorld)])
+Context = NamedTuple("Context", [("world", World), ("grid_world", GridWorld), ("dirt_map", dict[Position, int])])
 
 
 def create_world() -> World:
     # dim = Dim(random.randint(1, 50), random.randint(1, 50))
-    dim = Dim(5, 5)
+    dim = Dim(10, 10)
     window = tkinter.Tk()
     window.title("BotCleanLarge Grid World")
     window.geometry(f'{dim.w * GRID_SIZE}x{dim.h * GRID_SIZE}')
@@ -38,31 +39,33 @@ def initialize_world(world: World):
     x2y2 = ((pos.x + 1) * GRID_SIZE, (pos.y + 1) * GRID_SIZE)
     bot_id_ = world.canvas.create_rectangle(x1y1, x2y2, fill="red")
     world.window.update()
-    return Context(world, grid_world), bot_id_
+    return Context(world, grid_world, dirt_map), bot_id_
 
 
 def play(context: Context, bot_id_: int):
-    time.sleep(5)
     gw = context.grid_world
     print(gw)
-    # while not gw.dirt_empty():
-    # next_move = bcl.next_move(bot_pos.i, bot_pos.j, world.grid_dim.h, world.grid_dim.w, grid)
-    # print(next_move)
-    gw.move_bot("DOWN")
-    # if next_move == "UP":
-    #     x -= 1
-    # elif next_move == "DOWN":
-    #     x += 1
-    # elif next_move == "LEFT":
-    #     y -= 1
-    # elif next_move == "RIGHT":
-    #     y += 1
-    # elif next_move == "CLEAN":
-    bot_pos = gw.get_bot_pos()
-    xy = (bot_pos.x * GRID_SIZE, bot_pos.y * GRID_SIZE)
-    context.world.canvas.moveto(bot_id_, *xy)
-    context.world.window.update()
-    time.sleep(1)
+    pf = PathFinder(gw)
+    moves = pf.get_path()
+    for move in moves:
+        context.world.canvas.itemconfig(bot_id_, fill="red")
+        if move == "UP":
+            gw.move_bot("UP")
+        elif move == "DOWN":
+            gw.move_bot("DOWN")
+        elif move == "LEFT":
+            gw.move_bot("LEFT")
+        elif move == "RIGHT":
+            gw.move_bot("RIGHT")
+        elif move == "CLEAN":
+            gw.remove_dirt(gw.get_bot_pos())
+            context.world.canvas.delete(context.dirt_map[gw.get_bot_pos()])
+            context.world.canvas.itemconfig(bot_id_, fill="blue")
+        bot_pos = gw.get_bot_pos()
+        xy = (bot_pos.x * GRID_SIZE, bot_pos.y * GRID_SIZE)
+        context.world.canvas.moveto(bot_id_, *xy)
+        context.world.window.update()
+        time.sleep(0.5)
 
 
 my_world = create_world()
