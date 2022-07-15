@@ -4,7 +4,7 @@ from util import Position, Dim, GridWorld
 from typing import NamedTuple
 from pathfinder import PathFinder
 
-GRID_SIZE = 20
+GRID_SIZE = 40
 World = NamedTuple("World", [("grid_dim", Dim), ("window", tkinter.Tk), ("canvas", tkinter.Canvas)])
 TkBot = NamedTuple("TkBot", [("pos", Position), ("bot_id", int)])
 Context = NamedTuple("Context", [("world", World), ("grid_world", GridWorld), ("dirt_map", dict[Position, int])])
@@ -66,6 +66,7 @@ def play(context: Context, bot_id_: int):
         context.world.canvas.moveto(bot_id_, *xy)
         context.world.window.update()
         time.sleep(0.5)
+    context.world.canvas.itemconfig(bot_id_, fill="green")
 
 
 my_world = create_world()
