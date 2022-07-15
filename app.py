@@ -50,7 +50,7 @@ def play(context: Context, bot_id_: int):
     pf = PathFinder(gw)
     num_moves = 0
     while not context.grid_world.dirt_empty():
-        move = pf.get_path(depth=(5**2 * 2)).pop(0)
+        move = pf.get_path().pop(0)
         context.world.canvas.itemconfig(bot_id_, fill="red")
         if move == "UP":
             gw.move_bot("UP")
