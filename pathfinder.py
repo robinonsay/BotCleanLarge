@@ -24,25 +24,26 @@ class PathFinder:
         self.grid_world = grid_world
 
     def _get_heuristic(self, state: State):
-        # dirt_list = list(state.dirt)
-        # estimate = 0
-        # pos = state.pos
-        # # While there is dirt in the list
-        # while len(dirt_list) > 0:
-        #     index, dirt = min(enumerate(dirt_list), key=lambda d: getDist(d[1], pos))
-        #     # Get the euclidean distance to that dirt
-        #     estimate += getDist(dirt, pos)
-        #     # Move the position to the dirt we just "visited"
-        #     pos = dirt_list.pop(index)
-        estimate = len(state.dirt)
-        if estimate > 0:
-            x_avg = 0
-            y_avg = 0
-            for d in state.dirt:
-                x_avg += d.x
-                y_avg += d.y
-            cod = Position(x_avg // estimate, y_avg // estimate)
-            estimate += getDist(cod, state.pos)
+        alpha = 2
+        dirt_list = list(state.dirt)
+        estimate = len(state.dirt) * alpha
+        pos = state.pos
+        # While there is dirt in the list
+        while len(dirt_list) > 0:
+            index, dirt = min(enumerate(dirt_list), key=lambda d: getDist(d[1], pos))
+            # Get the euclidean distance to that dirt
+            estimate += getDist(dirt, pos)
+            # Move the position to the dirt we just "visited"
+            pos = dirt_list.pop(index)
+        # estimate = len(state.dirt) * alpha
+        # if estimate > 0:
+        #     x_avg = 0
+        #     y_avg = 0
+        #     for d in state.dirt:
+        #         x_avg += d.x
+        #         y_avg += d.y
+        #     cod = Position(x_avg // estimate, y_avg // estimate)
+        #     estimate += getDist(cod, state.pos)
         return estimate
 
     def _get_successors(self, state: State) -> Successor:
@@ -61,7 +62,7 @@ class PathFinder:
         for action in actions:
             ghost_bot = Bot(state.pos)
             dirt = state.dirt
-            step_cost = 2
+            step_cost = 1
             if action == "LEFT":
                 ghost_bot.left()
             elif action == "RIGHT":
@@ -75,7 +76,7 @@ class PathFinder:
                 dirt = dirt - {ghost_bot.pos}
             yield Successor(State(ghost_bot.pos, dirt), action, step_cost)
 
-    def get_path(self) -> list[str]:
+    def get_path(self, depth: int = None) -> list[str]:
         pq = []
         explored = set()
         start_state = State(self.grid_world.get_bot_pos(), self.grid_world.dirt)
@@ -88,8 +89,8 @@ class PathFinder:
             if state in explored:
                 continue
             # If we reach a goal state, return
-            if state in goal_states:
-                print(path)
+            if state in goal_states or (depth is not None and len(path) == depth):
+                # print(path)
                 return path
             # Add the state to the set of explored states
             explored.add(state)

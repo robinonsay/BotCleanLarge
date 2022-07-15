@@ -1,3 +1,4 @@
+import random
 import tkinter
 import time
 from util import Position, Dim, GridWorld
@@ -8,11 +9,12 @@ GRID_SIZE = 40
 World = NamedTuple("World", [("grid_dim", Dim), ("window", tkinter.Tk), ("canvas", tkinter.Canvas)])
 TkBot = NamedTuple("TkBot", [("pos", Position), ("bot_id", int)])
 Context = NamedTuple("Context", [("world", World), ("grid_world", GridWorld), ("dirt_map", dict[Position, int])])
+random.seed(69)
 
 
 def create_world() -> World:
     # dim = Dim(random.randint(1, 50), random.randint(1, 50))
-    dim = Dim(5, 5)
+    dim = Dim(10, 10)
     window = tkinter.Tk()
     window.title("BotCleanLarge Grid World")
     window.geometry(f'{dim.w * GRID_SIZE}x{dim.h * GRID_SIZE}')
@@ -46,8 +48,9 @@ def play(context: Context, bot_id_: int):
     gw = context.grid_world
     print(gw)
     pf = PathFinder(gw)
-    moves = pf.get_path()
-    for move in moves:
+    num_moves = 0
+    while not context.grid_world.dirt_empty():
+        move = pf.get_path(depth=(5**2 * 2)).pop(0)
         context.world.canvas.itemconfig(bot_id_, fill="red")
         if move == "UP":
             gw.move_bot("UP")
@@ -65,9 +68,14 @@ def play(context: Context, bot_id_: int):
         xy = (bot_pos.x * GRID_SIZE, bot_pos.y * GRID_SIZE)
         context.world.canvas.moveto(bot_id_, *xy)
         context.world.window.update()
-        time.sleep(0.5)
+        time.sleep(0.25)
+        num_moves += 1
     context.world.canvas.itemconfig(bot_id_, fill="green")
-
+    context.world.canvas.create_text(context.grid_world.dim.w*GRID_SIZE//2,
+                                     context.grid_world.dim.h*GRID_SIZE//2,
+                                     text=f"Number of Moves: {num_moves}",
+                                     fill="red",
+                                     )
 
 my_world = create_world()
 this_context, bot_id = initialize_world(my_world)
