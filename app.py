@@ -12,7 +12,7 @@ Context = NamedTuple("Context", [("world", World), ("grid_world", GridWorld), ("
 
 def create_world() -> World:
     # dim = Dim(random.randint(1, 50), random.randint(1, 50))
-    dim = Dim(10, 10)
+    dim = Dim(5, 5)
     window = tkinter.Tk()
     window.title("BotCleanLarge Grid World")
     window.geometry(f'{dim.w * GRID_SIZE}x{dim.h * GRID_SIZE}')
