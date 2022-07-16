@@ -24,27 +24,15 @@ class PathFinder:
         self.grid_world = grid_world
 
     def _get_heuristic(self, state: State):
-        alpha = 2
-        dirt_list = list(state.dirt)
-        estimate = len(state.dirt) * alpha
-        pos = state.pos
-        # While there is dirt in the list
-        while len(dirt_list) > 0:
-            index, dirt = min(enumerate(dirt_list), key=lambda d: getDist(d[1], pos))
-            # Get the euclidean distance to that dirt
-            estimate += getDist(dirt, pos)
-            # Move the position to the dirt we just "visited"
-            pos = dirt_list.pop(index)
-        # estimate = len(state.dirt) * alpha
-        # if estimate > 0:
-        #     x_avg = 0
-        #     y_avg = 0
-        #     for d in state.dirt:
-        #         x_avg += d.x
-        #         y_avg += d.y
-        #     cod = Position(x_avg // estimate, y_avg // estimate)
-        #     estimate += getDist(cod, state.pos)
-        return estimate
+        weight = 1.5
+        INF = 2**31-1
+        PPQItem = NamedTuple("PPQItem", [("c", int), ("v", Position)])
+        estimate = len(state.dirt) * weight
+        remaining_dirt = [PPQItem(INF, d) for d in state.dirt]
+        remaining_dirt.append(PPQItem(INF, state.pos))
+        while remaining_dirt:
+            c, pos = heapq.heappop(remaining_dirt)
+            dirt = min(remaining_dirt, key=lambda d: getDist(pos, d))
 
     def _get_successors(self, state: State) -> Successor:
         bot_pos = state.pos
