@@ -1,4 +1,5 @@
 import heapq
+import math
 import random
 from typing import NamedTuple
 from util import GridWorld, Position, Bot
@@ -9,7 +10,7 @@ Successor = NamedTuple("Successor", [("state", State), ("action", str), ("step_c
 PQItem = NamedTuple("PQItem", [("priority", int), ("state_info", StateInfo)])
 
 
-def getDist(pos1: Position, pos2: Position) -> float:
+def getDist(pos1: Position, pos2: Position) -> int:
     """
     Calculates manhattan distance between two grid points
     :param pos1: Coordinates of first position
@@ -19,31 +20,61 @@ def getDist(pos1: Position, pos2: Position) -> float:
     return abs(pos1.x - pos2.x) + abs(pos1.y - pos2.y)
 
 
+class DirtVertex:
+    flag = Position(-1, -1)
+
+    def __init__(self, pos:Position, cost=math.inf, edge:Position=flag):
+        self.pos = pos
+        self.cost = cost
+        self.edge = edge
+
+    def __lt__(self, other):
+        return self.cost < other.cost
+
+    def __le__(self, other):
+        return self.cost <= other.cost
+
+    def __gt__(self, other):
+        return self.cost > other.cost
+
+    def __ge__(self, other):
+        return self.cost >= other.cost
+
+    def copy(self):
+        return DirtVertex(self.pos, self.cost, self.edge)
+
+
 class PathFinder:
     def __init__(self, grid_world: GridWorld):
         self.grid_world = grid_world
 
-    def _get_heuristic(self, state: State):
-        alpha = 2
-        dirt_list = list(state.dirt)
-        estimate = len(state.dirt) * alpha
-        pos = state.pos
-        # While there is dirt in the list
-        while len(dirt_list) > 0:
-            index, dirt = min(enumerate(dirt_list), key=lambda d: getDist(d[1], pos))
-            # Get the euclidean distance to that dirt
-            estimate += getDist(dirt, pos)
-            # Move the position to the dirt we just "visited"
-            pos = dirt_list.pop(index)
-        # estimate = len(state.dirt) * alpha
-        # if estimate > 0:
-        #     x_avg = 0
-        #     y_avg = 0
-        #     for d in state.dirt:
-        #         x_avg += d.x
-        #         y_avg += d.y
-        #     cod = Position(x_avg // estimate, y_avg // estimate)
-        #     estimate += getDist(cod, state.pos)
+    @staticmethod
+    def _get_heuristic(state: State):
+        estimate = len(state.dirt)
+        PPQItem = NamedTuple("PPQItem", [("cost", int), ("pos", Position), ("seq", int)])
+        rd_heap = list()
+        i = 0
+        for d in state.dirt:
+            rd_heap.append(PPQItem(getDist(d, state.pos), d, i))
+            i += 1
+        heapq.heapify(rd_heap)
+        invalid = set()
+        rd_map = dict()
+        for item in rd_heap:
+            rd_map[item.pos] = (item.cost, item.seq)
+        while rd_heap:
+            item = heapq.heappop(rd_heap)
+            cost, dirt, seq = item
+            if item in invalid:
+                continue
+            estimate += cost
+            rd_map.pop(dirt)
+            for pos, value in rd_map.items():
+                invalid.add(PPQItem(value[0], pos, value[1]))
+                c = getDist(pos, dirt)
+                heapq.heappush(rd_heap, PPQItem(c, pos, i))
+                rd_map[pos] = (c, i)
+                i += 1
         return estimate
 
     def _get_successors(self, state: State) -> Successor:
@@ -102,6 +133,6 @@ class PathFinder:
                 # Add action to the path we took
                 new_path.append(action)
                 # Calculate the priority for pq and push onto pq
-                priority = self._get_heuristic(next_state) + new_cost
+                priority = PathFinder._get_heuristic(next_state) + new_cost
                 item = StateInfo(next_state, new_path, new_cost)
                 heapq.heappush(pq, PQItem(priority, item))

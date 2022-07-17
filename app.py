@@ -15,6 +15,7 @@ random.seed(69)
 def create_world() -> World:
     # dim = Dim(random.randint(1, 50), random.randint(1, 50))
     dim = Dim(10, 10)
+    # dim = Dim(3, 3)
     window = tkinter.Tk()
     window.title("BotCleanLarge Grid World")
     window.geometry(f'{dim.w * GRID_SIZE}x{dim.h * GRID_SIZE}')
@@ -44,7 +45,7 @@ def initialize_world(world: World):
     return Context(world, grid_world, dirt_map), bot_id_
 
 
-def play(context: Context, bot_id_: int):
+def play_next_move(context: Context, bot_id_: int):
     gw = context.grid_world
     print(gw)
     pf = PathFinder(gw)
@@ -76,6 +77,41 @@ def play(context: Context, bot_id_: int):
                                      text=f"Number of Moves: {num_moves}",
                                      fill="red",
                                      )
+
+
+def play(context: Context, bot_id_: int):
+    gw = context.grid_world
+    print(gw)
+    pf = PathFinder(gw)
+    num_moves = 0
+    moves = pf.get_path()
+    for move in moves:
+        context.world.canvas.itemconfig(bot_id_, fill="red")
+        if move == "UP":
+            gw.move_bot("UP")
+        elif move == "DOWN":
+            gw.move_bot("DOWN")
+        elif move == "LEFT":
+            gw.move_bot("LEFT")
+        elif move == "RIGHT":
+            gw.move_bot("RIGHT")
+        elif move == "CLEAN":
+            gw.remove_dirt(gw.get_bot_pos())
+            context.world.canvas.delete(context.dirt_map[gw.get_bot_pos()])
+            context.world.canvas.itemconfig(bot_id_, fill="blue")
+        bot_pos = gw.get_bot_pos()
+        xy = (bot_pos.x * GRID_SIZE, bot_pos.y * GRID_SIZE)
+        context.world.canvas.moveto(bot_id_, *xy)
+        context.world.window.update()
+        time.sleep(0.25)
+        num_moves += 1
+    context.world.canvas.itemconfig(bot_id_, fill="green")
+    context.world.canvas.create_text(context.grid_world.dim.w*GRID_SIZE//2,
+                                     context.grid_world.dim.h*GRID_SIZE//2,
+                                     text=f"Number of Moves: {num_moves}",
+                                     fill="red",
+                                     )
+
 
 my_world = create_world()
 this_context, bot_id = initialize_world(my_world)
