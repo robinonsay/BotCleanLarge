@@ -48,7 +48,8 @@ class PathFinder:
     def __init__(self, grid_world: GridWorld):
         self.grid_world = grid_world
 
-    def _get_heuristic(self, state: State):
+    @staticmethod
+    def _get_heuristic(state: State):
         estimate = 0
         rd_heap = [DirtVertex(d) for d in state.dirt]
         rd_heap.append(DirtVertex(state.pos))
@@ -67,7 +68,7 @@ class PathFinder:
                 if w in q_set and dist < w.cost:
                     invalid.add(w)
                     q_set.remove(w)
-                    new_w = DirtVertex(w.pos, dist, vertex)
+                    new_w = DirtVertex(w.pos, dist, vertex.pos)
                     q_set.add(new_w)
                     heapq.heappush(rd_heap, new_w)
         for v in forest:
@@ -131,6 +132,6 @@ class PathFinder:
                 # Add action to the path we took
                 new_path.append(action)
                 # Calculate the priority for pq and push onto pq
-                priority = self._get_heuristic(next_state) + new_cost
+                priority = PathFinder._get_heuristic(next_state) + new_cost
                 item = StateInfo(next_state, new_path, new_cost)
                 heapq.heappush(pq, PQItem(priority, item))
