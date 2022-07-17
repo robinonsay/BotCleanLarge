@@ -10,7 +10,7 @@ Successor = NamedTuple("Successor", [("state", State), ("action", str), ("step_c
 PQItem = NamedTuple("PQItem", [("priority", int), ("state_info", StateInfo)])
 
 
-def getDist(pos1: Position, pos2: Position) -> float:
+def getDist(pos1: Position, pos2: Position) -> int:
     """
     Calculates manhattan distance between two grid points
     :param pos1: Coordinates of first position
@@ -50,30 +50,31 @@ class PathFinder:
 
     @staticmethod
     def _get_heuristic(state: State):
-        estimate = 0
-        rd_heap = [DirtVertex(d) for d in state.dirt]
-        rd_heap.append(DirtVertex(state.pos))
-        vertices = rd_heap.copy()
-        forest = set()
-        q_set = set(rd_heap)
+        estimate = len(state.dirt)
+        PPQItem = NamedTuple("PPQItem", [("cost", int), ("pos", Position), ("seq", int)])
+        rd_heap = list()
+        i = 0
+        for d in state.dirt:
+            rd_heap.append(PPQItem(getDist(d, state.pos), d, i))
+            i += 1
+        heapq.heapify(rd_heap)
         invalid = set()
+        rd_map = dict()
+        for item in rd_heap:
+            rd_map[item.pos] = (item.cost, item.seq)
         while rd_heap:
-            vertex = heapq.heappop(rd_heap)
-            if vertex in invalid:
+            item = heapq.heappop(rd_heap)
+            cost, dirt, seq = item
+            if item in invalid:
                 continue
-            q_set.remove(vertex)
-            forest.add(vertex)
-            for w in vertices:
-                dist = getDist(w.pos, vertex.pos)
-                if w in q_set and dist < w.cost:
-                    invalid.add(w)
-                    q_set.remove(w)
-                    new_w = DirtVertex(w.pos, dist, vertex.pos)
-                    q_set.add(new_w)
-                    heapq.heappush(rd_heap, new_w)
-        for v in forest:
-            if v.cost != math.inf:
-                estimate += v.cost
+            estimate += cost
+            rd_map.pop(dirt)
+            for pos, value in rd_map.items():
+                invalid.add(PPQItem(value[0], pos, value[1]))
+                c = getDist(pos, dirt)
+                heapq.heappush(rd_heap, PPQItem(c, pos, i))
+                rd_map[pos] = (c, i)
+                i += 1
         return estimate
 
     def _get_successors(self, state: State) -> Successor:
