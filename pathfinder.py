@@ -1,4 +1,5 @@
 import heapq
+import math
 import random
 from typing import NamedTuple
 from util import GridWorld, Position, Bot
@@ -19,20 +20,60 @@ def getDist(pos1: Position, pos2: Position) -> float:
     return abs(pos1.x - pos2.x) + abs(pos1.y - pos2.y)
 
 
+class DirtVertex:
+    flag = Position(-1, -1)
+
+    def __init__(self, pos:Position, cost=math.inf, edge:Position=flag):
+        self.pos = pos
+        self.cost = cost
+        self.edge = edge
+
+    def __lt__(self, other):
+        return self.cost < other.cost
+
+    def __le__(self, other):
+        return self.cost <= other.cost
+
+    def __gt__(self, other):
+        return self.cost > other.cost
+
+    def __ge__(self, other):
+        return self.cost >= other.cost
+
+    def copy(self):
+        return DirtVertex(self.pos, self.cost, self.edge)
+
+
 class PathFinder:
     def __init__(self, grid_world: GridWorld):
         self.grid_world = grid_world
 
     def _get_heuristic(self, state: State):
-        weight = 1.5
-        INF = 2**31-1
-        PPQItem = NamedTuple("PPQItem", [("c", int), ("v", Position)])
-        estimate = len(state.dirt) * weight
-        remaining_dirt = [PPQItem(INF, d) for d in state.dirt]
-        remaining_dirt.append(PPQItem(INF, state.pos))
-        while remaining_dirt:
-            c, pos = heapq.heappop(remaining_dirt)
-            dirt = min(remaining_dirt, key=lambda d: getDist(pos, d))
+        estimate = 0
+        rd_heap = [DirtVertex(d) for d in state.dirt]
+        rd_heap.append(DirtVertex(state.pos))
+        vertices = rd_heap.copy()
+        forest = set()
+        q_set = set(rd_heap)
+        invalid = set()
+        while rd_heap:
+            vertex = heapq.heappop(rd_heap)
+            if vertex in invalid:
+                continue
+            q_set.remove(vertex)
+            forest.add(vertex)
+            for w in vertices:
+                dist = getDist(w.pos, vertex.pos)
+                if w in q_set and dist < w.cost:
+                    invalid.add(w)
+                    q_set.remove(w)
+                    new_w = DirtVertex(w.pos, dist, vertex)
+                    q_set.add(new_w)
+                    heapq.heappush(rd_heap, new_w)
+        for v in forest:
+            if v.cost != math.inf:
+                estimate += v.cost
+        return estimate
 
     def _get_successors(self, state: State) -> Successor:
         bot_pos = state.pos
